@@ -1,6 +1,21 @@
 name: Unit Tests
 
 on:
+  workflow_dispatch:
+    inputs:
+      leg:
+        description: "baseline (uninstrumented) or instrumented (under chalk/curiosity)"
+        type: choice
+        options: [instrumented, baseline]
+        default: instrumented
+      profile:
+        description: "CrashOverride chalk profile"
+        type: string
+        default: curiosity-tests-racecar
+      racecar_run:
+        description: "racecar correlation token, echoed into the run name"
+        type: string
+        default: ""
   push:
     branches:
       - main
@@ -13,17 +28,27 @@ on:
       - "doc/**"
       - "web/**"
 
-permissions: {}
+permissions:
+  contents: read
+  id-token: write
 
 defaults:
   run:
     shell: bash -euox pipefail {0}
+
+env:
+  # The one variable that separates the arms: on baseline, action-checkout
+  # skips its Set up Chalk step entirely.
+  CHALK_ON: ${{ github.event_name == 'workflow_dispatch' && inputs.leg != 'baseline' }}
+
+run-name: "Unit Tests ${{ inputs.leg || 'push' }} ${{ inputs.racecar_run }}"
 
 jobs:
   ubuntu:
     runs-on: ${{ matrix.platform }}
     permissions:
       contents: read
+      id-token: write
     timeout-minutes: 90
     strategy:
       matrix:
@@ -95,8 +120,8 @@ jobs:
       LC_ALL: ${{ matrix.lc_all || '' }}
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-${{ matrix.environment }}-${{ matrix.pytest_marker_expression }}-${{ matrix.extra_apt || '' }}-${{ matrix.pandas_future }}-${{ matrix.platform }}
-      cancel-in-progress: true
+      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-${{ matrix.environment }}-${{ matrix.pytest_marker_expression }}-${{ matrix.extra_apt || '' }}-${{ matrix.pandas_future }}-${{ matrix.platform }}-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      cancel-in-progress: false
 
     services:
       mysql:
@@ -134,9 +159,18 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      uses: crashappsec/action-checkout@main
       with:
+        chalk: ${{ env.CHALK_ON }}
+        profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+        observables_continue_on_error: false
+        lfs: false
         fetch-depth: 0
+    - name: Assert instrumentation is live
+      if: env.CHALK_ON == 'true'
+      run: |
+        test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
+        test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
 
     - name: Generate extra locales
       # These extra locales will be available for locale.setlocale() calls in tests
@@ -209,63 +243,40 @@ jobs:
       # provide most hollistic coverage report
       if: ${{ steps.test-not-single-cpu.outcome == 'success' && steps.test-single-cpu.outcome == 'success' }}
 
-  macos-windows:
-    permissions:
-      contents: read
-    timeout-minutes: 90
-    strategy:
-      matrix:
-        os: [macos-15-intel, macos-15, windows-2025]
-        environment: [py311, py312, py313, py314]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-    name: ${{ format('{0} {1}', matrix.os, matrix.environment) }}
-    concurrency:
-      # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-${{ matrix.environment }}-${{ matrix.os }}
-      cancel-in-progress: true
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-
-      - name: Create virtual environment with Pixi
-        uses: ./.github/actions/setup-pixi
-        with:
-          environment: ${{ matrix.environment }}
-
-      - name: Remove link.EXE for Windows
-        # https://github.com/Quansight-Labs/uarray/pull/310#issuecomment-3872989816
-        run: rm /c/Program\ Files/Git/usr/bin/link.EXE
-        if: ${{ matrix.os == 'windows-2025' }}
-
-      - name: Build pandas
-        id: build
-        run: |
-          pixi run \
-            --environment ${{ matrix.environment }} \
-            build-pandas \
-            --editable \
-            "${{ matrix.os == 'windows-2025' && '-Csetup-args="--vsenv" -Csetup-args="--werror"' || '-Csetup-args="--werror"' }}"
-
-      - name: Test
-        uses: ./.github/actions/run-tests
-        with:
-          environment: ${{ matrix.environment }}
-          numprocesses: 'auto'
-          pytest_marker_expression: 'not slow and not db and not network and not single_cpu'
-          pytest_target: 'pandas'
-
   Linux-32-bit:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      id-token: write
     container:
       image: quay.io/pypa/manylinux_2_28_i686
       options: --platform linux/386
     steps:
+      - name: Checkout code
+        uses: crashappsec/action-checkout@main
+        with:
+          chalk: ${{ env.CHALK_ON }}
+          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+          observables_continue_on_error: false
+          lfs: false
+      - name: Assert instrumentation is live
+        if: env.CHALK_ON == 'true'
+        run: |
+          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
+          test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
+
+      - name: Install curl/bash for action-checkout (racecar; ungated, both arms)
+        shell: sh
+        run: |
+          command -v curl >/dev/null 2>&1 && command -v bash >/dev/null 2>&1 && exit 0
+          if command -v apt-get >/dev/null 2>&1; then
+            apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl ca-certificates bash
+          elif command -v apk >/dev/null 2>&1; then apk add --no-cache curl ca-certificates bash
+          elif command -v dnf >/dev/null 2>&1; then dnf install -y curl ca-certificates bash
+          elif command -v yum >/dev/null 2>&1; then yum install -y curl ca-certificates bash
+          elif command -v zypper >/dev/null 2>&1; then zypper -n install curl ca-certificates bash
+          fi
+
       - name: Checkout pandas Repo
         # actions/checkout does not work since it requires node
         run: |
@@ -297,16 +308,42 @@ jobs:
           python -m pytest -m 'not slow and not network and not clipboard and not single_cpu' pandas
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-32bit
-      cancel-in-progress: true
+      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-32bit-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      cancel-in-progress: false
 
   Linux-Musl:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      id-token: write
     container:
       image: quay.io/pypa/musllinux_1_2_x86_64
     steps:
+      - name: Checkout code
+        uses: crashappsec/action-checkout@main
+        with:
+          chalk: ${{ env.CHALK_ON }}
+          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+          observables_continue_on_error: false
+          lfs: false
+      - name: Assert instrumentation is live
+        if: env.CHALK_ON == 'true'
+        run: |
+          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
+          test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
+
+      - name: Install curl/bash for action-checkout (racecar; ungated, both arms)
+        shell: sh
+        run: |
+          command -v curl >/dev/null 2>&1 && command -v bash >/dev/null 2>&1 && exit 0
+          if command -v apt-get >/dev/null 2>&1; then
+            apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl ca-certificates bash
+          elif command -v apk >/dev/null 2>&1; then apk add --no-cache curl ca-certificates bash
+          elif command -v dnf >/dev/null 2>&1; then dnf install -y curl ca-certificates bash
+          elif command -v yum >/dev/null 2>&1; then yum install -y curl ca-certificates bash
+          elif command -v zypper >/dev/null 2>&1; then zypper -n install curl ca-certificates bash
+          fi
+
       - name: Checkout pandas Repo
         # actions/checkout does not work since it requires node
         run: |
@@ -339,50 +376,33 @@ jobs:
           python -m pytest -m 'not slow and not network and not clipboard and not single_cpu' pandas
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-musl
-      cancel-in-progress: true
-
-  Windows-MinGW:
-    runs-on: windows-2025
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-
-      - name: Create virtual environment with Pixi
-        uses: ./.github/actions/setup-pixi
-        with:
-          environment: mingw
-
-      - name: Build pandas
-        id: build
-        run: |
-          pixi run \
-            --environment mingw \
-            build-pandas \
-            --editable \
-            -Csetup-args="--werror"
-    concurrency:
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-mingw
-      cancel-in-progress: true
+      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-musl-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      cancel-in-progress: false
 
   Linux-Sanitizers:
     name: "Clang (ASAN/UBSAN)"
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      id-token: write
     timeout-minutes: 90
     concurrency:
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-sanitizers
-      cancel-in-progress: true
+      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-sanitizers-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      cancel-in-progress: false
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: crashappsec/action-checkout@main
         with:
+          chalk: ${{ env.CHALK_ON }}
+          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+          observables_continue_on_error: false
+          lfs: false
           fetch-depth: 0
+      - name: Assert instrumentation is live
+        if: env.CHALK_ON == 'true'
+        run: |
+          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
+          test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
 
       - name: Create virtual environment with Pixi
         uses: ./.github/actions/setup-pixi
@@ -441,18 +461,19 @@ jobs:
     # if: false
     permissions:
       contents: read
+      id-token: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15-intel, macos-15, windows-2025]
+        os: [ubuntu-24.04]
 
     timeout-minutes: 90
 
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-${{ matrix.os }}-python-dev
-      cancel-in-progress: true
+      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-${{ matrix.os }}-python-dev-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      cancel-in-progress: false
 
     env:
       PYTEST_WORKERS: "auto"
@@ -460,9 +481,19 @@ jobs:
       PYTEST_TARGET: pandas
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Checkout code
+        uses: crashappsec/action-checkout@main
         with:
+          chalk: ${{ env.CHALK_ON }}
+          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+          observables_continue_on_error: false
+          lfs: false
           fetch-depth: 0
+      - name: Assert instrumentation is live
+        if: env.CHALK_ON == 'true'
+        run: |
+          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
+          test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
 
       - name: Set up Python Dev Version
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -496,15 +527,25 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      id-token: write
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-wasm
-      cancel-in-progress: true
+      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-wasm-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      cancel-in-progress: false
     steps:
       - name: Checkout pandas Repo
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: crashappsec/action-checkout@main
         with:
+          chalk: ${{ env.CHALK_ON }}
+          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+          observables_continue_on_error: false
+          lfs: false
           fetch-depth: 0
+      - name: Assert instrumentation is live
+        if: env.CHALK_ON == 'true'
+        run: |
+          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
+          test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
 
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
