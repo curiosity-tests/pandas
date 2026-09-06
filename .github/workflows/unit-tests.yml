@@ -39,7 +39,7 @@ defaults:
 env:
   # The one variable that separates the arms: on baseline, action-checkout
   # skips its Set up Chalk step entirely.
-  CHALK_ON: ${{ github.event_name == 'workflow_dispatch' && inputs.leg != 'baseline' }}
+  CHALK_ON: ${{ inputs.leg == 'instrumented' }}
 
 run-name: "Unit Tests ${{ inputs.leg || 'push' }} ${{ inputs.racecar_run }}"
 
@@ -120,7 +120,7 @@ jobs:
       LC_ALL: ${{ matrix.lc_all || '' }}
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-${{ matrix.environment }}-${{ matrix.pytest_marker_expression }}-${{ matrix.extra_apt || '' }}-${{ matrix.pandas_future }}-${{ matrix.platform }}-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      group: ${{ 'push' == 'push' && github.run_number || github.ref }}-${{ matrix.environment }}-${{ matrix.pytest_marker_expression }}-${{ matrix.extra_apt || '' }}-${{ matrix.pandas_future }}-${{ matrix.platform }}-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
       cancel-in-progress: false
 
     services:
@@ -308,7 +308,7 @@ jobs:
           python -m pytest -m 'not slow and not network and not clipboard and not single_cpu' pandas
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-32bit-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      group: ${{ 'push' == 'push' && github.run_number || github.ref }}-32bit-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
       cancel-in-progress: false
 
   Linux-Musl:
@@ -376,7 +376,7 @@ jobs:
           python -m pytest -m 'not slow and not network and not clipboard and not single_cpu' pandas
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-musl-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      group: ${{ 'push' == 'push' && github.run_number || github.ref }}-musl-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
       cancel-in-progress: false
 
   Linux-Sanitizers:
@@ -387,7 +387,7 @@ jobs:
       id-token: write
     timeout-minutes: 90
     concurrency:
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-sanitizers-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      group: ${{ 'push' == 'push' && github.run_number || github.ref }}-sanitizers-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
       cancel-in-progress: false
     steps:
       - name: Checkout
@@ -472,7 +472,7 @@ jobs:
 
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-${{ matrix.os }}-python-dev-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      group: ${{ 'push' == 'push' && github.run_number || github.ref }}-${{ matrix.os }}-python-dev-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
       cancel-in-progress: false
 
     env:
@@ -530,7 +530,7 @@ jobs:
       id-token: write
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
-      group: ${{ github.event_name == 'push' && github.run_number || github.ref }}-wasm-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+      group: ${{ 'push' == 'push' && github.run_number || github.ref }}-wasm-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
       cancel-in-progress: false
     steps:
       - name: Checkout pandas Repo
