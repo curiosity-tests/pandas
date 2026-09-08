@@ -159,7 +159,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: crashappsec/action-checkout@main
+      uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
       with:
         chalk: ${{ env.CHALK_ON }}
         profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
@@ -253,7 +253,7 @@ jobs:
       options: --platform linux/386
     steps:
       - name: Checkout code
-        uses: crashappsec/action-checkout@main
+        uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
         with:
           chalk: ${{ env.CHALK_ON }}
           profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
@@ -331,7 +331,7 @@ jobs:
       image: quay.io/pypa/musllinux_1_2_x86_64
     steps:
       - name: Checkout code
-        uses: crashappsec/action-checkout@main
+        uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
         with:
           chalk: ${{ env.CHALK_ON }}
           profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
@@ -413,7 +413,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Checkout
-        uses: crashappsec/action-checkout@main
+        uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
         with:
           chalk: ${{ env.CHALK_ON }}
           profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
@@ -504,7 +504,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: crashappsec/action-checkout@main
+        uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
         with:
           chalk: ${{ env.CHALK_ON }}
           profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
@@ -556,7 +556,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Checkout pandas Repo
-        uses: crashappsec/action-checkout@main
+        uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
         with:
           chalk: ${{ env.CHALK_ON }}
           profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
