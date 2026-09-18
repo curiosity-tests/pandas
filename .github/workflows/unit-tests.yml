@@ -18,15 +18,15 @@ on:
         default: ""
   push:
     branches:
-      - main
-      - 3.0.x
+    - main
+    - 3.0.x
   pull_request:
     branches:
-      - main
-      - 3.0.x
+    - main
+    - 3.0.x
     paths-ignore:
-      - "doc/**"
-      - "web/**"
+    - "doc/**"
+    - "web/**"
 
 permissions:
   contents: read
@@ -58,61 +58,61 @@ jobs:
         pytest_marker_expression: [""]
         pandas_future: ["default"]
         include:
-          - name: "Downstream Compat"
-            environment: downstream
-            pytest_marker_expression: "not slow and not network and not single_cpu"
-            pytest_target: "pandas/tests/test_downstream.py"
-            platform: ubuntu-24.04
-          - name: "Minimum Versions"
-            environment: minimum-versions
-            pytest_marker_expression: "not slow and not network and not single_cpu"
-            platform: ubuntu-24.04
-          - name: "Freethreading"
-            environment: py313-freethreading
-            pytest_marker_expression: "not slow and not network and not single_cpu"
-            platform: ubuntu-24.04
-          - name: "Without PyArrow"
-            environment: no-pyarrow
-            pytest_marker_expression: "not slow and not network and not single_cpu"
-            platform: ubuntu-24.04
-          - name: "Locale: it_IT"
-            environment: py313
-            pytest_marker_expression: "not slow and not network and not single_cpu"
-            extra_apt: "language-pack-it"
+        - name: "Downstream Compat"
+          environment: downstream
+          pytest_marker_expression: "not slow and not network and not single_cpu"
+          pytest_target: "pandas/tests/test_downstream.py"
+          platform: ubuntu-24.04
+        - name: "Minimum Versions"
+          environment: minimum-versions
+          pytest_marker_expression: "not slow and not network and not single_cpu"
+          platform: ubuntu-24.04
+        - name: "Freethreading"
+          environment: py313-freethreading
+          pytest_marker_expression: "not slow and not network and not single_cpu"
+          platform: ubuntu-24.04
+        - name: "Without PyArrow"
+          environment: no-pyarrow
+          pytest_marker_expression: "not slow and not network and not single_cpu"
+          platform: ubuntu-24.04
+        - name: "Locale: it_IT"
+          environment: py313
+          pytest_marker_expression: "not slow and not network and not single_cpu"
+          extra_apt: "language-pack-it"
             # Use the utf8 version as the default, it has no bad side-effect.
-            lang: "it_IT.utf8"
-            lc_all: "it_IT.utf8"
+          lang: "it_IT.utf8"
+          lc_all: "it_IT.utf8"
             # Also install it_IT (its encoding is ISO8859-1) but do not activate it.
             # It will be temporarily activated during tests with locale.setlocale
-            extra_loc: "it_IT"
-            platform: ubuntu-24.04
-          - name: "Locale: zh_CN"
-            environment: py313
-            pytest_marker_expression: "not slow and not network and not single_cpu"
-            extra_apt: "language-pack-zh-hans"
+          extra_loc: "it_IT"
+          platform: ubuntu-24.04
+        - name: "Locale: zh_CN"
+          environment: py313
+          pytest_marker_expression: "not slow and not network and not single_cpu"
+          extra_apt: "language-pack-zh-hans"
             # Use the utf8 version as the default, it has no bad side-effect.
-            lang: "zh_CN.utf8"
-            lc_all: "zh_CN.utf8"
+          lang: "zh_CN.utf8"
+          lc_all: "zh_CN.utf8"
             # Also install zh_CN (its encoding is gb2312) but do not activate it.
             # It will be temporarily activated during tests with locale.setlocale
-            extra_loc: "zh_CN"
-            platform: ubuntu-24.04
-          - name: "Future configs legacy values"
-            environment: py313
-            pandas_future: "legacy"
-            platform: ubuntu-24.04
-          - name: "Future configs upcoming values"
-            environment: py313
-            pandas_future: "upcoming"
-            platform: ubuntu-24.04
-          - name: "Numpy Nightly"
-            environment: numpy-nightly
-            pytest_marker_expression: "not slow and not network and not single_cpu"
-            platform: ubuntu-24.04
-          - name: "Pyarrow Nightly"
-            environment: pyarrow-nightly
-            pytest_marker_expression: "not slow and not network and not single_cpu"
-            platform: ubuntu-24.04
+          extra_loc: "zh_CN"
+          platform: ubuntu-24.04
+        - name: "Future configs legacy values"
+          environment: py313
+          pandas_future: "legacy"
+          platform: ubuntu-24.04
+        - name: "Future configs upcoming values"
+          environment: py313
+          pandas_future: "upcoming"
+          platform: ubuntu-24.04
+        - name: "Numpy Nightly"
+          environment: numpy-nightly
+          pytest_marker_expression: "not slow and not network and not single_cpu"
+          platform: ubuntu-24.04
+        - name: "Pyarrow Nightly"
+          environment: pyarrow-nightly
+          pytest_marker_expression: "not slow and not network and not single_cpu"
+          platform: ubuntu-24.04
       fail-fast: false
     name: ${{ matrix.name || format('{0} {1}', matrix.platform, matrix.environment) }}
     env:
@@ -135,7 +135,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 3306:3306
+        - 3306:3306
 
       postgres:
         image: postgres:18
@@ -150,12 +150,12 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+        - 5432:5432
 
       moto:
         image: motoserver/moto:5.1.18
         ports:
-          - 5000:5000
+        - 5000:5000
 
     steps:
     - name: Checkout
@@ -166,12 +166,6 @@ jobs:
         observables_continue_on_error: false
         lfs: false
         fetch-depth: 0
-    - name: Assert instrumentation is live
-      if: env.CHALK_ON == 'true'
-      run: |
-        test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
-        test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
-
     - name: Generate extra locales
       # These extra locales will be available for locale.setlocale() calls in tests
       run: |
@@ -243,6 +237,83 @@ jobs:
       # provide most hollistic coverage report
       if: ${{ steps.test-not-single-cpu.outcome == 'success' && steps.test-single-cpu.outcome == 'success' }}
 
+    - name: Check observables and crashes
+      if: always() && env.CHALK_ON == 'true'
+      shell: bash
+      run: |
+        set -uo pipefail
+        root="${CURIOSITY_ROOT:-}"
+        home="${CURIOSITY_HOME:-/mnt/curiosity}"
+        obs="${home}/observables"
+        fail=0
+
+        echo "::group::curiosity layout"
+        echo "CURIOSITY_ROOT=${root:-<unset>}"
+        echo "CURIOSITY_HOME=${home}"
+        ls -la "${obs}" 2>/dev/null || echo "no observables dir at ${obs}"
+        echo "::endgroup::"
+
+        # Observables for THIS run+attempt. The prefix matters: a stale file from an
+        # earlier run on the same mount would otherwise pass.
+        prefix="${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+        shopt -s nullglob
+        mine=("${obs}/${prefix}"*)
+        if [ ${#mine[@]} -eq 0 ]; then
+          mine=("${obs}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables"*)
+        fi
+        if [ ${#mine[@]} -eq 0 ]; then
+          echo "::error::no observables for run ${prefix} in ${obs} - instrumentation produced nothing"
+          fail=1
+        else
+          echo "observables present: ${#mine[@]} file(s)"
+          printf '  %s\n' "${mine[@]}"
+        fi
+
+        for f in "${mine[@]}"; do
+          case "$f" in
+            *.jsonl|*.json|*.combined)
+              if ! jq --slurp "." "$f" > /dev/null 2>&1; then
+                echo "::error::observables do not parse: $f"
+                fail=1
+              fi
+              ;;
+          esac
+        done
+
+        # Crash thresholds copied from check-run: a few null frames are noise, more than
+        # five is a stack walk into nothing.
+        for f in "${root}"/log/co-host*.log "${home}"/log/co-host*.log; do
+          [ -f "$f" ] || continue
+          echo "Asserting that there is no crash in $f"
+          if [ "$(grep -c 'p 00000000' "$f" 2>/dev/null || echo 0)" -gt 5 ] \
+            || [ "$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "$f" 2>/dev/null || echo 0)" -gt 1 ]; then
+            echo "::error::crash signature in $f"
+            grep -E 'FATAL: Uncaught signal|Address not mapped at' "$f" | head -5 || true
+            fail=1
+          fi
+        done
+
+        cores=("${root}"/coredump.* "${home}"/coredump.*)
+        if [ ${#cores[@]} -gt 0 ]; then
+          echo "::error::coredump present: ${cores[*]}"
+          fail=1
+        fi
+
+        for f in "${root}"/runc.log "${root}"/runc.global.log \
+                 "${home}"/runc.log "${home}"/runc.global.log; do
+          [ -f "$f" ] || continue
+          if grep -q '^E:' "$f"; then
+            echo "::error::error in $f"
+            grep '^E:' "$f" | head -5
+            fail=1
+          fi
+        done
+
+        if [ "$fail" -ne 0 ]; then
+          echo "::error::instrumentation check FAILED"
+          exit 1
+        fi
+        echo "instrumentation check passed"
   Linux-32-bit:
     runs-on: ubuntu-24.04
     permissions:
@@ -252,21 +323,15 @@ jobs:
       image: quay.io/pypa/manylinux_2_28_i686
       options: --platform linux/386
     steps:
-      - name: Checkout code
-        uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
-        with:
-          chalk: ${{ env.CHALK_ON }}
-          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
-          observables_continue_on_error: false
-          lfs: false
-      - name: Assert instrumentation is live
-        if: env.CHALK_ON == 'true'
-        run: |
-          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
-          test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
-
-      - name: Install curl/bash for action-checkout (racecar; ungated, both arms)
-        shell: sh
+    - name: Checkout code
+      uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
+      with:
+        chalk: ${{ env.CHALK_ON }}
+        profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+        observables_continue_on_error: false
+        lfs: false
+    - name: Install curl/bash for action-checkout (racecar; ungated, both arms)
+      shell: sh
         # Best-effort probe, never a gate. Inside a container job running as a
         # non-root user, apt-get cannot write /var/lib/apt/lists and exits 100,
         # which failed ardupilot's build job at step 3 before any of its own work
@@ -274,49 +339,126 @@ jobs:
         # trailing `exit 0` would never be reached -- hence `|| true` per branch
         # plus continue-on-error. If curl/bash are genuinely missing,
         # action-checkout fails next with a message that names the real problem.
-        continue-on-error: true
-        run: |
-          command -v curl >/dev/null 2>&1 && command -v bash >/dev/null 2>&1 && exit 0
-          SUDO=
-          if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then SUDO=sudo; fi
-          if command -v apt-get >/dev/null 2>&1; then
-            { $SUDO apt-get update -qq && DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y -qq curl ca-certificates bash; } || true
-          elif command -v apk >/dev/null 2>&1; then $SUDO apk add --no-cache curl ca-certificates bash || true
-          elif command -v dnf >/dev/null 2>&1; then $SUDO dnf install -y curl ca-certificates bash || true
-          elif command -v yum >/dev/null 2>&1; then $SUDO yum install -y curl ca-certificates bash || true
-          elif command -v zypper >/dev/null 2>&1; then $SUDO zypper -n install curl ca-certificates bash || true
-          fi
-          exit 0
+      continue-on-error: true
+      run: |
+        command -v curl >/dev/null 2>&1 && command -v bash >/dev/null 2>&1 && exit 0
+        SUDO=
+        if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then SUDO=sudo; fi
+        if command -v apt-get >/dev/null 2>&1; then
+          { $SUDO apt-get update -qq && DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y -qq curl ca-certificates bash; } || true
+        elif command -v apk >/dev/null 2>&1; then $SUDO apk add --no-cache curl ca-certificates bash || true
+        elif command -v dnf >/dev/null 2>&1; then $SUDO dnf install -y curl ca-certificates bash || true
+        elif command -v yum >/dev/null 2>&1; then $SUDO yum install -y curl ca-certificates bash || true
+        elif command -v zypper >/dev/null 2>&1; then $SUDO zypper -n install curl ca-certificates bash || true
+        fi
+        exit 0
 
-      - name: Checkout pandas Repo
+    - name: Checkout pandas Repo
         # actions/checkout does not work since it requires node
-        run: |
-          git config --global --add safe.directory $PWD
+      run: |
+        git config --global --add safe.directory $PWD
 
-          if [ $GITHUB_EVENT_NAME != pull_request ]; then
-              git clone --recursive --branch=$GITHUB_REF_NAME https://github.com/${GITHUB_REPOSITORY}.git $GITHUB_WORKSPACE
-              git reset --hard $GITHUB_SHA
-          else
-              git clone --recursive https://github.com/${GITHUB_REPOSITORY}.git $GITHUB_WORKSPACE
-              git fetch origin $GITHUB_REF:my_ref_name
-              git checkout $GITHUB_BASE_REF
-              git -c user.email="you@example.com" merge --no-commit my_ref_name
-          fi
-      - name: Build environment
+        if [ $GITHUB_EVENT_NAME != pull_request ]; then
+            git clone --recursive --branch=$GITHUB_REF_NAME https://github.com/${GITHUB_REPOSITORY}.git $GITHUB_WORKSPACE
+            git reset --hard $GITHUB_SHA
+        else
+            git clone --recursive https://github.com/${GITHUB_REPOSITORY}.git $GITHUB_WORKSPACE
+            git fetch origin $GITHUB_REF:my_ref_name
+            git checkout $GITHUB_BASE_REF
+            git -c user.email="you@example.com" merge --no-commit my_ref_name
+        fi
+    - name: Build environment
         # https://github.com/numpy/numpy/issues/24703#issuecomment-1722379388
-        run: |
-          /opt/python/cp313-cp313/bin/python -m venv ~/virtualenvs/pandas-dev
-          . ~/virtualenvs/pandas-dev/bin/activate
-          python -m pip install --no-cache-dir -U pip wheel meson[ninja] meson-python
-          python -m pip install numpy -Csetup-args="-Dallow-noblas=true"
-          python -m pip install --no-cache-dir versioneer[toml] cython python-dateutil "pytest>=8.3.4" pytest-xdist>=3.6.1 pytest-cov
-          python -m pip install --no-cache-dir --no-build-isolation -e . -Csetup-args="--werror" -Csetup-args=-Dc_args="-Wno-overflow -Wno-type-limits -Wno-shift-count-overflow -Wno-sign-compare"
-          python -m pip list --no-cache-dir
+      run: |
+        /opt/python/cp313-cp313/bin/python -m venv ~/virtualenvs/pandas-dev
+        . ~/virtualenvs/pandas-dev/bin/activate
+        python -m pip install --no-cache-dir -U pip wheel meson[ninja] meson-python
+        python -m pip install numpy -Csetup-args="-Dallow-noblas=true"
+        python -m pip install --no-cache-dir versioneer[toml] cython python-dateutil "pytest>=8.3.4" pytest-xdist>=3.6.1 pytest-cov
+        python -m pip install --no-cache-dir --no-build-isolation -e . -Csetup-args="--werror" -Csetup-args=-Dc_args="-Wno-overflow -Wno-type-limits -Wno-shift-count-overflow -Wno-sign-compare"
+        python -m pip list --no-cache-dir
 
-      - name: Run Tests
-        run: |
-          . ~/virtualenvs/pandas-dev/bin/activate
-          python -m pytest -m 'not slow and not network and not clipboard and not single_cpu' pandas
+    - name: Run Tests
+      run: |
+        . ~/virtualenvs/pandas-dev/bin/activate
+        python -m pytest -m 'not slow and not network and not clipboard and not single_cpu' pandas
+    - name: Check observables and crashes
+      if: always() && env.CHALK_ON == 'true'
+      shell: bash
+      run: |
+        set -uo pipefail
+        root="${CURIOSITY_ROOT:-}"
+        home="${CURIOSITY_HOME:-/mnt/curiosity}"
+        obs="${home}/observables"
+        fail=0
+
+        echo "::group::curiosity layout"
+        echo "CURIOSITY_ROOT=${root:-<unset>}"
+        echo "CURIOSITY_HOME=${home}"
+        ls -la "${obs}" 2>/dev/null || echo "no observables dir at ${obs}"
+        echo "::endgroup::"
+
+        # Observables for THIS run+attempt. The prefix matters: a stale file from an
+        # earlier run on the same mount would otherwise pass.
+        prefix="${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+        shopt -s nullglob
+        mine=("${obs}/${prefix}"*)
+        if [ ${#mine[@]} -eq 0 ]; then
+          mine=("${obs}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables"*)
+        fi
+        if [ ${#mine[@]} -eq 0 ]; then
+          echo "::error::no observables for run ${prefix} in ${obs} - instrumentation produced nothing"
+          fail=1
+        else
+          echo "observables present: ${#mine[@]} file(s)"
+          printf '  %s\n' "${mine[@]}"
+        fi
+
+        for f in "${mine[@]}"; do
+          case "$f" in
+            *.jsonl|*.json|*.combined)
+              if ! jq --slurp "." "$f" > /dev/null 2>&1; then
+                echo "::error::observables do not parse: $f"
+                fail=1
+              fi
+              ;;
+          esac
+        done
+
+        # Crash thresholds copied from check-run: a few null frames are noise, more than
+        # five is a stack walk into nothing.
+        for f in "${root}"/log/co-host*.log "${home}"/log/co-host*.log; do
+          [ -f "$f" ] || continue
+          echo "Asserting that there is no crash in $f"
+          if [ "$(grep -c 'p 00000000' "$f" 2>/dev/null || echo 0)" -gt 5 ] \
+            || [ "$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "$f" 2>/dev/null || echo 0)" -gt 1 ]; then
+            echo "::error::crash signature in $f"
+            grep -E 'FATAL: Uncaught signal|Address not mapped at' "$f" | head -5 || true
+            fail=1
+          fi
+        done
+
+        cores=("${root}"/coredump.* "${home}"/coredump.*)
+        if [ ${#cores[@]} -gt 0 ]; then
+          echo "::error::coredump present: ${cores[*]}"
+          fail=1
+        fi
+
+        for f in "${root}"/runc.log "${root}"/runc.global.log \
+                 "${home}"/runc.log "${home}"/runc.global.log; do
+          [ -f "$f" ] || continue
+          if grep -q '^E:' "$f"; then
+            echo "::error::error in $f"
+            grep '^E:' "$f" | head -5
+            fail=1
+          fi
+        done
+
+        if [ "$fail" -ne 0 ]; then
+          echo "::error::instrumentation check FAILED"
+          exit 1
+        fi
+        echo "instrumentation check passed"
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
       group: ${{ 'push' == 'push' && github.run_number || github.ref }}-32bit-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
@@ -330,21 +472,15 @@ jobs:
     container:
       image: quay.io/pypa/musllinux_1_2_x86_64
     steps:
-      - name: Checkout code
-        uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
-        with:
-          chalk: ${{ env.CHALK_ON }}
-          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
-          observables_continue_on_error: false
-          lfs: false
-      - name: Assert instrumentation is live
-        if: env.CHALK_ON == 'true'
-        run: |
-          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
-          test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
-
-      - name: Install curl/bash for action-checkout (racecar; ungated, both arms)
-        shell: sh
+    - name: Checkout code
+      uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
+      with:
+        chalk: ${{ env.CHALK_ON }}
+        profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+        observables_continue_on_error: false
+        lfs: false
+    - name: Install curl/bash for action-checkout (racecar; ungated, both arms)
+      shell: sh
         # Best-effort probe, never a gate. Inside a container job running as a
         # non-root user, apt-get cannot write /var/lib/apt/lists and exits 100,
         # which failed ardupilot's build job at step 3 before any of its own work
@@ -352,50 +488,127 @@ jobs:
         # trailing `exit 0` would never be reached -- hence `|| true` per branch
         # plus continue-on-error. If curl/bash are genuinely missing,
         # action-checkout fails next with a message that names the real problem.
-        continue-on-error: true
-        run: |
-          command -v curl >/dev/null 2>&1 && command -v bash >/dev/null 2>&1 && exit 0
-          SUDO=
-          if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then SUDO=sudo; fi
-          if command -v apt-get >/dev/null 2>&1; then
-            { $SUDO apt-get update -qq && DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y -qq curl ca-certificates bash; } || true
-          elif command -v apk >/dev/null 2>&1; then $SUDO apk add --no-cache curl ca-certificates bash || true
-          elif command -v dnf >/dev/null 2>&1; then $SUDO dnf install -y curl ca-certificates bash || true
-          elif command -v yum >/dev/null 2>&1; then $SUDO yum install -y curl ca-certificates bash || true
-          elif command -v zypper >/dev/null 2>&1; then $SUDO zypper -n install curl ca-certificates bash || true
-          fi
-          exit 0
+      continue-on-error: true
+      run: |
+        command -v curl >/dev/null 2>&1 && command -v bash >/dev/null 2>&1 && exit 0
+        SUDO=
+        if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then SUDO=sudo; fi
+        if command -v apt-get >/dev/null 2>&1; then
+          { $SUDO apt-get update -qq && DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y -qq curl ca-certificates bash; } || true
+        elif command -v apk >/dev/null 2>&1; then $SUDO apk add --no-cache curl ca-certificates bash || true
+        elif command -v dnf >/dev/null 2>&1; then $SUDO dnf install -y curl ca-certificates bash || true
+        elif command -v yum >/dev/null 2>&1; then $SUDO yum install -y curl ca-certificates bash || true
+        elif command -v zypper >/dev/null 2>&1; then $SUDO zypper -n install curl ca-certificates bash || true
+        fi
+        exit 0
 
-      - name: Checkout pandas Repo
+    - name: Checkout pandas Repo
         # actions/checkout does not work since it requires node
-        run: |
-          git config --global --add safe.directory $PWD
+      run: |
+        git config --global --add safe.directory $PWD
 
-          if [ $GITHUB_EVENT_NAME != pull_request ]; then
-              git clone --recursive --branch=$GITHUB_REF_NAME https://github.com/${GITHUB_REPOSITORY}.git $GITHUB_WORKSPACE
-              git reset --hard $GITHUB_SHA
-          else
-              git clone --recursive https://github.com/${GITHUB_REPOSITORY}.git $GITHUB_WORKSPACE
-              git fetch origin $GITHUB_REF:my_ref_name
-              git checkout $GITHUB_BASE_REF
-              git -c user.email="you@example.com" merge --no-commit my_ref_name
+        if [ $GITHUB_EVENT_NAME != pull_request ]; then
+            git clone --recursive --branch=$GITHUB_REF_NAME https://github.com/${GITHUB_REPOSITORY}.git $GITHUB_WORKSPACE
+            git reset --hard $GITHUB_SHA
+        else
+            git clone --recursive https://github.com/${GITHUB_REPOSITORY}.git $GITHUB_WORKSPACE
+            git fetch origin $GITHUB_REF:my_ref_name
+            git checkout $GITHUB_BASE_REF
+            git -c user.email="you@example.com" merge --no-commit my_ref_name
+        fi
+    - name: Configure System Packages
+      run: |
+        apk update
+        apk add musl-locales
+    - name: Build environment
+      run: |
+        /opt/python/cp313-cp313/bin/python -m venv ~/virtualenvs/pandas-dev
+        . ~/virtualenvs/pandas-dev/bin/activate
+        python -m pip install --no-cache-dir -U pip wheel meson-python meson[ninja]
+        python -m pip install --no-cache-dir versioneer[toml] cython numpy python-dateutil "pytest>=8.3.4" pytest-xdist>=3.6.1 pytest-cov
+        python -m pip install --no-cache-dir --no-build-isolation -e . -Csetup-args="--werror"
+        python -m pip list --no-cache-dir
+    - name: Run Tests
+      run: |
+        . ~/virtualenvs/pandas-dev/bin/activate
+        python -m pytest -m 'not slow and not network and not clipboard and not single_cpu' pandas
+    - name: Check observables and crashes
+      if: always() && env.CHALK_ON == 'true'
+      shell: bash
+      run: |
+        set -uo pipefail
+        root="${CURIOSITY_ROOT:-}"
+        home="${CURIOSITY_HOME:-/mnt/curiosity}"
+        obs="${home}/observables"
+        fail=0
+
+        echo "::group::curiosity layout"
+        echo "CURIOSITY_ROOT=${root:-<unset>}"
+        echo "CURIOSITY_HOME=${home}"
+        ls -la "${obs}" 2>/dev/null || echo "no observables dir at ${obs}"
+        echo "::endgroup::"
+
+        # Observables for THIS run+attempt. The prefix matters: a stale file from an
+        # earlier run on the same mount would otherwise pass.
+        prefix="${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+        shopt -s nullglob
+        mine=("${obs}/${prefix}"*)
+        if [ ${#mine[@]} -eq 0 ]; then
+          mine=("${obs}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables"*)
+        fi
+        if [ ${#mine[@]} -eq 0 ]; then
+          echo "::error::no observables for run ${prefix} in ${obs} - instrumentation produced nothing"
+          fail=1
+        else
+          echo "observables present: ${#mine[@]} file(s)"
+          printf '  %s\n' "${mine[@]}"
+        fi
+
+        for f in "${mine[@]}"; do
+          case "$f" in
+            *.jsonl|*.json|*.combined)
+              if ! jq --slurp "." "$f" > /dev/null 2>&1; then
+                echo "::error::observables do not parse: $f"
+                fail=1
+              fi
+              ;;
+          esac
+        done
+
+        # Crash thresholds copied from check-run: a few null frames are noise, more than
+        # five is a stack walk into nothing.
+        for f in "${root}"/log/co-host*.log "${home}"/log/co-host*.log; do
+          [ -f "$f" ] || continue
+          echo "Asserting that there is no crash in $f"
+          if [ "$(grep -c 'p 00000000' "$f" 2>/dev/null || echo 0)" -gt 5 ] \
+            || [ "$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "$f" 2>/dev/null || echo 0)" -gt 1 ]; then
+            echo "::error::crash signature in $f"
+            grep -E 'FATAL: Uncaught signal|Address not mapped at' "$f" | head -5 || true
+            fail=1
           fi
-      - name: Configure System Packages
-        run: |
-          apk update
-          apk add musl-locales
-      - name: Build environment
-        run: |
-          /opt/python/cp313-cp313/bin/python -m venv ~/virtualenvs/pandas-dev
-          . ~/virtualenvs/pandas-dev/bin/activate
-          python -m pip install --no-cache-dir -U pip wheel meson-python meson[ninja]
-          python -m pip install --no-cache-dir versioneer[toml] cython numpy python-dateutil "pytest>=8.3.4" pytest-xdist>=3.6.1 pytest-cov
-          python -m pip install --no-cache-dir --no-build-isolation -e . -Csetup-args="--werror"
-          python -m pip list --no-cache-dir
-      - name: Run Tests
-        run: |
-          . ~/virtualenvs/pandas-dev/bin/activate
-          python -m pytest -m 'not slow and not network and not clipboard and not single_cpu' pandas
+        done
+
+        cores=("${root}"/coredump.* "${home}"/coredump.*)
+        if [ ${#cores[@]} -gt 0 ]; then
+          echo "::error::coredump present: ${cores[*]}"
+          fail=1
+        fi
+
+        for f in "${root}"/runc.log "${root}"/runc.global.log \
+                 "${home}"/runc.log "${home}"/runc.global.log; do
+          [ -f "$f" ] || continue
+          if grep -q '^E:' "$f"; then
+            echo "::error::error in $f"
+            grep '^E:' "$f" | head -5
+            fail=1
+          fi
+        done
+
+        if [ "$fail" -ne 0 ]; then
+          echo "::error::instrumentation check FAILED"
+          exit 1
+        fi
+        echo "instrumentation check passed"
     concurrency:
       # https://github.community/t/concurrecy-not-work-for-push/183068/7
       group: ${{ 'push' == 'push' && github.run_number || github.ref }}-musl-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
@@ -412,54 +625,125 @@ jobs:
       group: ${{ 'push' == 'push' && github.run_number || github.ref }}-sanitizers-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
       cancel-in-progress: false
     steps:
-      - name: Checkout
-        uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
-        with:
-          chalk: ${{ env.CHALK_ON }}
-          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
-          observables_continue_on_error: false
-          lfs: false
-          fetch-depth: 0
-      - name: Assert instrumentation is live
-        if: env.CHALK_ON == 'true'
-        run: |
-          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
-          test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
+    - name: Checkout
+      uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
+      with:
+        chalk: ${{ env.CHALK_ON }}
+        profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+        observables_continue_on_error: false
+        lfs: false
+        fetch-depth: 0
+    - name: Create virtual environment with Pixi
+      uses: ./.github/actions/setup-pixi
+      with:
+        environment: sanitizers
 
-      - name: Create virtual environment with Pixi
-        uses: ./.github/actions/setup-pixi
-        with:
-          environment: sanitizers
+    - name: Build pandas
+      id: build
+      run: |
+        pixi run \
+          --environment sanitizers \
+          build-pandas \
+          --editable \
+          -Csetup-args="--werror" \
+          -- \
+          -Csetup-args="-Dbuildtype=debugoptimized" \
+          -Csetup-args="-Db_sanitize=address,undefined" \
+          -Csetup-args="-Db_lundef=false"
 
-      - name: Build pandas
-        id: build
-        run: |
-          pixi run \
-            --environment sanitizers \
-            build-pandas \
-            --editable \
-            -Csetup-args="--werror" \
-            -- \
-            -Csetup-args="-Dbuildtype=debugoptimized" \
-            -Csetup-args="-Db_sanitize=address,undefined" \
-            -Csetup-args="-Db_lundef=false"
+    - name: Get Sanitizer Path
+      run: |
+        echo "ASAN_LIB_PATH=$(pixi run -e sanitizers clang -print-file-name=libclang_rt.asan-x86_64.so)" >> $GITHUB_ENV
 
-      - name: Get Sanitizer Path
-        run: |
-          echo "ASAN_LIB_PATH=$(pixi run -e sanitizers clang -print-file-name=libclang_rt.asan-x86_64.so)" >> $GITHUB_ENV
+    - name: Test
+      uses: ./.github/actions/run-tests
+      env:
+        LD_PRELOAD: ${{ env.ASAN_LIB_PATH }}
+        ASAN_OPTIONS: detect_leaks=0
+        UBSAN_OPTIONS: halt_on_error=1:suppressions=${{ github.workspace }}/ci/suppressions/ubsan.txt
+      with:
+        environment: sanitizers
+        numprocesses: "auto"
+        pytest_marker_expression: "not slow and not db and not network and not single_cpu"
+        pytest_target: "pandas"
 
-      - name: Test
-        uses: ./.github/actions/run-tests
-        env:
-          LD_PRELOAD: ${{ env.ASAN_LIB_PATH }}
-          ASAN_OPTIONS: detect_leaks=0
-          UBSAN_OPTIONS: halt_on_error=1:suppressions=${{ github.workspace }}/ci/suppressions/ubsan.txt
-        with:
-          environment: sanitizers
-          numprocesses: "auto"
-          pytest_marker_expression: "not slow and not db and not network and not single_cpu"
-          pytest_target: "pandas"
+    - name: Check observables and crashes
+      if: always() && env.CHALK_ON == 'true'
+      shell: bash
+      run: |
+        set -uo pipefail
+        root="${CURIOSITY_ROOT:-}"
+        home="${CURIOSITY_HOME:-/mnt/curiosity}"
+        obs="${home}/observables"
+        fail=0
 
+        echo "::group::curiosity layout"
+        echo "CURIOSITY_ROOT=${root:-<unset>}"
+        echo "CURIOSITY_HOME=${home}"
+        ls -la "${obs}" 2>/dev/null || echo "no observables dir at ${obs}"
+        echo "::endgroup::"
+
+        # Observables for THIS run+attempt. The prefix matters: a stale file from an
+        # earlier run on the same mount would otherwise pass.
+        prefix="${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+        shopt -s nullglob
+        mine=("${obs}/${prefix}"*)
+        if [ ${#mine[@]} -eq 0 ]; then
+          mine=("${obs}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables"*)
+        fi
+        if [ ${#mine[@]} -eq 0 ]; then
+          echo "::error::no observables for run ${prefix} in ${obs} - instrumentation produced nothing"
+          fail=1
+        else
+          echo "observables present: ${#mine[@]} file(s)"
+          printf '  %s\n' "${mine[@]}"
+        fi
+
+        for f in "${mine[@]}"; do
+          case "$f" in
+            *.jsonl|*.json|*.combined)
+              if ! jq --slurp "." "$f" > /dev/null 2>&1; then
+                echo "::error::observables do not parse: $f"
+                fail=1
+              fi
+              ;;
+          esac
+        done
+
+        # Crash thresholds copied from check-run: a few null frames are noise, more than
+        # five is a stack walk into nothing.
+        for f in "${root}"/log/co-host*.log "${home}"/log/co-host*.log; do
+          [ -f "$f" ] || continue
+          echo "Asserting that there is no crash in $f"
+          if [ "$(grep -c 'p 00000000' "$f" 2>/dev/null || echo 0)" -gt 5 ] \
+            || [ "$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "$f" 2>/dev/null || echo 0)" -gt 1 ]; then
+            echo "::error::crash signature in $f"
+            grep -E 'FATAL: Uncaught signal|Address not mapped at' "$f" | head -5 || true
+            fail=1
+          fi
+        done
+
+        cores=("${root}"/coredump.* "${home}"/coredump.*)
+        if [ ${#cores[@]} -gt 0 ]; then
+          echo "::error::coredump present: ${cores[*]}"
+          fail=1
+        fi
+
+        for f in "${root}"/runc.log "${root}"/runc.global.log \
+                 "${home}"/runc.log "${home}"/runc.global.log; do
+          [ -f "$f" ] || continue
+          if grep -q '^E:' "$f"; then
+            echo "::error::error in $f"
+            grep '^E:' "$f" | head -5
+            fail=1
+          fi
+        done
+
+        if [ "$fail" -ne 0 ]; then
+          echo "::error::instrumentation check FAILED"
+          exit 1
+        fi
+        echo "instrumentation check passed"
   python-dev:
     # This job may or may not run depending on the state of the next
     # unreleased Python version. DO NOT DELETE IT.
@@ -503,41 +787,112 @@ jobs:
       PYTEST_TARGET: pandas
 
     steps:
-      - name: Checkout code
-        uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
-        with:
-          chalk: ${{ env.CHALK_ON }}
-          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
-          observables_continue_on_error: false
-          lfs: false
-          fetch-depth: 0
-      - name: Assert instrumentation is live
-        if: env.CHALK_ON == 'true'
-        run: |
-          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
-          test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
+    - name: Checkout code
+      uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
+      with:
+        chalk: ${{ env.CHALK_ON }}
+        profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+        observables_continue_on_error: false
+        lfs: false
+        fetch-depth: 0
+    - name: Set up Python Dev Version
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97   # v7.0.0
+      with:
+        python-version: '3.15-dev'
 
-      - name: Set up Python Dev Version
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.15-dev'
+    - name: Build Environment
+      run: |
+        python --version
+        python -m pip install --upgrade pip wheel meson[ninja] meson-python
+        python -m pip install --pre --extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        python -m pip install versioneer[toml] python-dateutil tzdata cython "pytest>=8.3.4" pytest-xdist>=3.6.1 pytest-cov
+        python -m pip install -ve . --no-build-isolation --no-index --no-deps \
+          -Csetup-args="--werror" \
+          ${{ matrix.os != 'windows-2025' && '-Csetup-args=-Dcpp_args="-Wno-missing-field-initializers"' || '' }} \
+          ${{ matrix.os == 'windows-2025' && '-Csetup-args="--vsenv"' || '' }}
+        python -m pip list
 
-      - name: Build Environment
-        run: |
-          python --version
-          python -m pip install --upgrade pip wheel meson[ninja] meson-python
-          python -m pip install --pre --extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
-          python -m pip install versioneer[toml] python-dateutil tzdata cython "pytest>=8.3.4" pytest-xdist>=3.6.1 pytest-cov
-          python -m pip install -ve . --no-build-isolation --no-index --no-deps \
-            -Csetup-args="--werror" \
-            ${{ matrix.os != 'windows-2025' && '-Csetup-args=-Dcpp_args="-Wno-missing-field-initializers"' || '' }} \
-            ${{ matrix.os == 'windows-2025' && '-Csetup-args="--vsenv"' || '' }}
-          python -m pip list
-
-      - name: Run Tests
-        run: python -m pytest -m 'not slow and not network and not clipboard and not single_cpu' pandas
+    - name: Run Tests
+      run: python -m pytest -m 'not slow and not network and not clipboard and not single_cpu' pandas
 
   # NOTE: this job must be kept in sync with the Pyodide build job in wheels.yml
+    - name: Check observables and crashes
+      if: always() && env.CHALK_ON == 'true'
+      shell: bash
+      run: |
+        set -uo pipefail
+        root="${CURIOSITY_ROOT:-}"
+        home="${CURIOSITY_HOME:-/mnt/curiosity}"
+        obs="${home}/observables"
+        fail=0
+
+        echo "::group::curiosity layout"
+        echo "CURIOSITY_ROOT=${root:-<unset>}"
+        echo "CURIOSITY_HOME=${home}"
+        ls -la "${obs}" 2>/dev/null || echo "no observables dir at ${obs}"
+        echo "::endgroup::"
+
+        # Observables for THIS run+attempt. The prefix matters: a stale file from an
+        # earlier run on the same mount would otherwise pass.
+        prefix="${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+        shopt -s nullglob
+        mine=("${obs}/${prefix}"*)
+        if [ ${#mine[@]} -eq 0 ]; then
+          mine=("${obs}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables"*)
+        fi
+        if [ ${#mine[@]} -eq 0 ]; then
+          echo "::error::no observables for run ${prefix} in ${obs} - instrumentation produced nothing"
+          fail=1
+        else
+          echo "observables present: ${#mine[@]} file(s)"
+          printf '  %s\n' "${mine[@]}"
+        fi
+
+        for f in "${mine[@]}"; do
+          case "$f" in
+            *.jsonl|*.json|*.combined)
+              if ! jq --slurp "." "$f" > /dev/null 2>&1; then
+                echo "::error::observables do not parse: $f"
+                fail=1
+              fi
+              ;;
+          esac
+        done
+
+        # Crash thresholds copied from check-run: a few null frames are noise, more than
+        # five is a stack walk into nothing.
+        for f in "${root}"/log/co-host*.log "${home}"/log/co-host*.log; do
+          [ -f "$f" ] || continue
+          echo "Asserting that there is no crash in $f"
+          if [ "$(grep -c 'p 00000000' "$f" 2>/dev/null || echo 0)" -gt 5 ] \
+            || [ "$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "$f" 2>/dev/null || echo 0)" -gt 1 ]; then
+            echo "::error::crash signature in $f"
+            grep -E 'FATAL: Uncaught signal|Address not mapped at' "$f" | head -5 || true
+            fail=1
+          fi
+        done
+
+        cores=("${root}"/coredump.* "${home}"/coredump.*)
+        if [ ${#cores[@]} -gt 0 ]; then
+          echo "::error::coredump present: ${cores[*]}"
+          fail=1
+        fi
+
+        for f in "${root}"/runc.log "${root}"/runc.global.log \
+                 "${home}"/runc.log "${home}"/runc.global.log; do
+          [ -f "$f" ] || continue
+          if grep -q '^E:' "$f"; then
+            echo "::error::error in $f"
+            grep '^E:' "$f" | head -5
+            fail=1
+          fi
+        done
+
+        if [ "$fail" -ne 0 ]; then
+          echo "::error::instrumentation check FAILED"
+          exit 1
+        fi
+        echo "instrumentation check passed"
   emscripten:
     # Note: the Python version, Emscripten toolchain version are determined
     # by the Pyodide version. The appropriate versions can be found in the
@@ -555,56 +910,127 @@ jobs:
       group: ${{ 'push' == 'push' && github.run_number || github.ref }}-wasm-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
       cancel-in-progress: false
     steps:
-      - name: Checkout pandas Repo
-        uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
-        with:
-          chalk: ${{ env.CHALK_ON }}
-          profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
-          observables_continue_on_error: false
-          lfs: false
-          fetch-depth: 0
-      - name: Assert instrumentation is live
-        if: env.CHALK_ON == 'true'
-        run: |
-          test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
-          test -S "${CURIOSITY_SOCKET_NAME:?socket name unset}" || { echo "::error::co-hostd socket absent"; exit 1; }
+    - name: Checkout pandas Repo
+      uses: crashappsec/action-checkout@e9ff46a65f6403d9d88b87d248c3dfa41550ec75
+      with:
+        chalk: ${{ env.CHALK_ON }}
+        profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+        observables_continue_on_error: false
+        lfs: false
+        fetch-depth: 0
+    - name: Set up Node.js
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020   # v7.0.0
+      with:
+        node-version: 24
 
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24
+    - name: Set up Python
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97   # v7.0.0
+      with:
+        python-version: '3.12'
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.12'
+    - name: Install pyodide-build
+      run: python -m pip install pyodide-build
 
-      - name: Install pyodide-build
-        run: python -m pip install pyodide-build
+    - name: Save Emscripten version
+      run: echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
 
-      - name: Save Emscripten version
-        run: echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
+    - name: Set up Emscripten toolchain
+      uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984   # v16
+      with:
+        version: ${{ env.EMSCRIPTEN_VERSION }}
+        actions-cache-folder: emsdk-cache
 
-      - name: Set up Emscripten toolchain
-        uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
-        with:
-          version: ${{ env.EMSCRIPTEN_VERSION }}
-          actions-cache-folder: emsdk-cache
+    - name: Build pandas for Pyodide
+      run: pyodide build
 
-      - name: Build pandas for Pyodide
-        run: pyodide build
+    - name: Set up Pyodide virtual environment
+      run: |
+        pyodide xbuildenv install 0.27.1
+        pyodide venv .venv-pyodide
+        source .venv-pyodide/bin/activate
+        python -m pip install dist/*.whl
 
-      - name: Set up Pyodide virtual environment
-        run: |
-          pyodide xbuildenv install 0.27.1
-          pyodide venv .venv-pyodide
-          source .venv-pyodide/bin/activate
-          python -m pip install dist/*.whl
+    - name: Test pandas for Pyodide
+      run: |
+        source .venv-pyodide/bin/activate
+        python -m pip install "pytest>=8.3.4" pytest-cov
+        # do not import pandas from the checked out repo
+        cd ../..
+        pytest -m 'not slow and not network and not clipboard and not single_cpu' --pyargs pandas
+    - name: Check observables and crashes
+      if: always() && env.CHALK_ON == 'true'
+      shell: bash
+      run: |
+        set -uo pipefail
+        root="${CURIOSITY_ROOT:-}"
+        home="${CURIOSITY_HOME:-/mnt/curiosity}"
+        obs="${home}/observables"
+        fail=0
 
-      - name: Test pandas for Pyodide
-        run: |
-          source .venv-pyodide/bin/activate
-          python -m pip install "pytest>=8.3.4" pytest-cov
-          # do not import pandas from the checked out repo
-          cd ../..
-          pytest -m 'not slow and not network and not clipboard and not single_cpu' --pyargs pandas
+        echo "::group::curiosity layout"
+        echo "CURIOSITY_ROOT=${root:-<unset>}"
+        echo "CURIOSITY_HOME=${home}"
+        ls -la "${obs}" 2>/dev/null || echo "no observables dir at ${obs}"
+        echo "::endgroup::"
+
+        # Observables for THIS run+attempt. The prefix matters: a stale file from an
+        # earlier run on the same mount would otherwise pass.
+        prefix="${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+        shopt -s nullglob
+        mine=("${obs}/${prefix}"*)
+        if [ ${#mine[@]} -eq 0 ]; then
+          mine=("${obs}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-observables"*)
+        fi
+        if [ ${#mine[@]} -eq 0 ]; then
+          echo "::error::no observables for run ${prefix} in ${obs} - instrumentation produced nothing"
+          fail=1
+        else
+          echo "observables present: ${#mine[@]} file(s)"
+          printf '  %s\n' "${mine[@]}"
+        fi
+
+        for f in "${mine[@]}"; do
+          case "$f" in
+            *.jsonl|*.json|*.combined)
+              if ! jq --slurp "." "$f" > /dev/null 2>&1; then
+                echo "::error::observables do not parse: $f"
+                fail=1
+              fi
+              ;;
+          esac
+        done
+
+        # Crash thresholds copied from check-run: a few null frames are noise, more than
+        # five is a stack walk into nothing.
+        for f in "${root}"/log/co-host*.log "${home}"/log/co-host*.log; do
+          [ -f "$f" ] || continue
+          echo "Asserting that there is no crash in $f"
+          if [ "$(grep -c 'p 00000000' "$f" 2>/dev/null || echo 0)" -gt 5 ] \
+            || [ "$(grep -E -c 'FATAL: Uncaught signal|Address not mapped at|RAX 0x.*RBX 0x' "$f" 2>/dev/null || echo 0)" -gt 1 ]; then
+            echo "::error::crash signature in $f"
+            grep -E 'FATAL: Uncaught signal|Address not mapped at' "$f" | head -5 || true
+            fail=1
+          fi
+        done
+
+        cores=("${root}"/coredump.* "${home}"/coredump.*)
+        if [ ${#cores[@]} -gt 0 ]; then
+          echo "::error::coredump present: ${cores[*]}"
+          fail=1
+        fi
+
+        for f in "${root}"/runc.log "${root}"/runc.global.log \
+                 "${home}"/runc.log "${home}"/runc.global.log; do
+          [ -f "$f" ] || continue
+          if grep -q '^E:' "$f"; then
+            echo "::error::error in $f"
+            grep '^E:' "$f" | head -5
+            fail=1
+          fi
+        done
+
+        if [ "$fail" -ne 0 ]; then
+          echo "::error::instrumentation check FAILED"
+          exit 1
+        fi
+        echo "instrumentation check passed"
