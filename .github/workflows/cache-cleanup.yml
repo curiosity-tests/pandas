@@ -1,8 +1,6 @@
 name: Clean closed branch caches
 on:
-  schedule:
-    # 4:10 UTC daily
-    - cron: "10 4 * * *"
+  workflow_dispatch:
   pull_request:
     types:
       - closed
